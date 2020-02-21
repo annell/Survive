@@ -31,3 +31,4 @@ class Screen():
     WIDTH = 1000
     HEIGHT = 400
     RENDERDISTANCE = 500
+    RAYDISTANCE = 300

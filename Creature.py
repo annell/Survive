@@ -74,6 +74,8 @@ class AiControlled(Creature):
         super().__init__(x, y, width, height, color, speed)
         self.goal = self.GetNewGoal()
         self.againstWall = False
+        self.stuckTimer = 10
+        self.lastDistance = 0
     
     def HitWall(self):
         self.againstWall = True
@@ -90,6 +92,13 @@ class AiControlled(Creature):
             self.Move(Direction.LEFT, True)
         else:
             self.Move(Direction.RIGHT, True)
+        if abs(self.lastDistance - distance) < 1:
+            self.stuckTimer -= 1
+            if not self.stuckTimer:
+                return True
+        else:
+            self.stuckTimer = 100
+        self.lastDistance = distance
         return abs(distance) < 10
     
     def Step(self):

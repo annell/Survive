@@ -1,20 +1,23 @@
 import pygame
-from Common import Screen
+from Common import Screen, Physics
 import math
 
 class Camera():
     def __init__(self): 
         self.cameraFrame = pygame.Rect(0, 0, Screen.WIDTH, Screen.HEIGHT)
     
-    def PlaceInScene(self, pos, blocks):
-        x, y = self.CenterOfFrame(pos)
+    def CenterScreenAt(self, pos):
+        x, y = self.WorldToCamera(pos)
         self.cameraFrame.x = x
         self.cameraFrame.y = y
-        for block in blocks:
-            block.hitbox.x = block.x - x
-            block.hitbox.y = block.y - y
+    
+    def PlaceInScene(self, pos, objects):
+        x, y = self.WorldToCamera(pos)
+        for obj in objects:
+            obj.hitbox.x = obj.x - x
+            obj.hitbox.y = obj.y - y
 
-    def CenterOfFrame(self, pos):
+    def WorldToCamera(self, pos):
         x, y = pos
         return (x - Screen.WIDTH/2, y - Screen.HEIGHT/2)
     
@@ -22,7 +25,12 @@ class Camera():
         x, y = pos
         return x + self.cameraFrame.x, y + self.cameraFrame.y
 
-    def GetCenterScreen(self):
-        x = self.cameraFrame.x + Screen.WIDTH/2
-        y = self.cameraFrame.y + Screen.HEIGHT/2
+    def GetCenterScreenWorldFrame(self):
+        x = (self.cameraFrame.x + Screen.WIDTH/2)/Physics.BLOCKWIDTH
+        y = (self.cameraFrame.y + Screen.HEIGHT/2)/Physics.BLOCKHEIGHT
+        return (x, y)
+
+    def GetCenterScreenCameraFrame(self):
+        x = Screen.WIDTH/2
+        y = Screen.HEIGHT/2
         return (x, y)

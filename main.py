@@ -22,7 +22,8 @@ class App:
         pygame.mixer.init()
         pygame.init()
         pygame.display.set_caption("Survive")
-        self.visibilityLimited = False
+        self.visibilityLimited = True
+        self.visionLines = []
  
     def on_init(self):
         self.camera = Camera()
@@ -81,7 +82,8 @@ class App:
             self.render360()
 
     def render360(self):
-        nrRays = 15
+        nrRays = 50
+        self.visionLines = []
         for _ in range(nrRays):
             angle = random.random()*2*math.pi
             dx = math.cos(angle)
@@ -90,9 +92,10 @@ class App:
             y = self.player.y
             rx = x + dx
             ry = y + dy
-            block = self.world.closestIntersectingBlock(((x, y), (rx, ry)), Screen.RENDERDISTANCE)
+            block = self.world.closestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE)
             if block:
-                block.render = True
+                self.visionLines.append((x, y, block))
+                block.render = 2000
         
         
     def on_render(self):
@@ -109,20 +112,27 @@ class App:
                     block.highlighted = False
                 else:
                     pygame.draw.rect(self._display_surf, block.color, block.hitbox)
+                if self.visibilityLimited:
+                    block.render -= 10
 
         self.camera.PlaceInScene(self.player.GetPosition(), self.entities)
+        self.camera.CenterScreenAt(self.player.GetPosition())
         for entity in self.entities:
             pygame.draw.rect(self._display_surf, entity.color, entity.hitbox)
+
+        for line in self.visionLines:
+            _, _, block = line
+            pygame.draw.line(self._display_surf, (255, 255, 255), self.camera.GetCenterScreenCameraFrame(), (block.hitbox.x, block.hitbox.y))
         
         #Scoreboard
-        self.draw_text("({}, {}) @ World: {} | {}".format(math.floor((self.player.x + self.player.hitbox.width/2)/Physics.BLOCKWIDTH), self.player.x + self.player.width/2, self.player.y + self.player.height/2, self.world.seed, self.player.onGround), (0,0))
-        self.draw_text("Press R to restart", (0, 10))
-        self.draw_text("Press ESC to exit", (0, 20))
-        self.draw_text("Press p to pause", (0, 30))
-        self.draw_text("Press v to toggle visibilty mode", (0, 40))
-        #self.draw_text("({}, {})".format(x, y), (0, 70))
-        #startY = 80
-        #blocksAtMouse = self.world.BlocksAt((x, y), 50)
+        self.draw_text("({}, {}) @ World: {} | {}".format(*self.camera.GetCenterScreenWorldFrame(), self.world.seed, self.player.onGround), (0,0))
+        self.draw_text("Press R to restart", (0, 20))
+        self.draw_text("Press ESC to exit", (0, 30))
+        self.draw_text("Press p to pause", (0, 40))
+        self.draw_text("Press v to toggle visibilty mode", (0, 50))
+        self.draw_text("({}, {})".format(x, y), (0, 70))
+        startY = 80
+        blocksAtMouse = self.world.BlocksAt((x, y), 50)
         #for block in blocksAtMouse:
         #    self.draw_text("({}, {}) Color: {}".format(block.hitboxWorldFrame.x/Physics.BLOCKWIDTH, block.hitboxWorldFrame.y/Physics.BLOCKHEIGHT, block.color), (0, startY))
         #    startY += 10
