@@ -1,7 +1,8 @@
 from Common import Direction
 from Common import Physics 
 from Common import Screen
-from Common import Biome
+from Common import BlockType
+from Common import Action
 import pygame
 import random
 
@@ -19,6 +20,7 @@ class Creature():
         self.onGround = False
         self.color = color
         self.inWater = False
+        self.render = False
     
     def Step(self):
         pass
@@ -124,18 +126,27 @@ class Player(Creature):
         self.selectedBlock = False
         self.mouseDirection = (0, 0)
     
-    def SelectBlock(self, block, direction):
+    def SelectBlock(self, pos, world):
+        x, y = pos
+        block = world.ClosestIntersectingBlock(((self.x + self.width/2, self.y + self.height/2), (x, y)), 30)
         self.selectedBlock = block
-        dx0, dy0 = direction
+        dx0, dy0 = pos
+        if (dx0 + dy0) == 0:
+            self.mouseDirection = (0, 0)
+            
         dx = self.x + dx0*100/(abs(dx0) + abs(dy0))
         dy = self.y + dy0*100/(abs(dx0) + abs(dy0))
         self.mouseDirection = (dx, dy)
         if block:
             block.highlighted = True
     
-    def Action(self, world):
-        if self.selectedBlock and not self.selectedBlock.color == Biome.WATER:
-            world.DeleteBlock(self.selectedBlock)
+    def Action(self, world, action, pos=None):
+        if action == Action.DESTROY:
+            if self.selectedBlock and not self.selectedBlock.color == BlockType.WATER:
+                world.DeleteBlock(self.selectedBlock)
+        elif action == Action.BUILD:
+            if self.selectedBlock:
+                world.CreateBlockAt(pos, BlockType.LIGHT)
 
 class Pigg(AiControlled):
     def __init__(self, x, y):

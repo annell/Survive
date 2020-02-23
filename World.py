@@ -4,7 +4,7 @@ import math
 from collections import defaultdict
 
 from Common import Physics
-from Common import Biome
+from Common import BlockType
 from Common import Screen 
 
 from Creature import Pigg
@@ -15,41 +15,43 @@ from opensimplex import OpenSimplex
 import math
 
 class World():
-    def __init__(self):
+    def __init__(self, displaySurf):
         self.seed = int(random.random() * 100000.0)
         genHills = OpenSimplex(self.seed)
         genCaves = OpenSimplex(self.seed)
         self.blocks = defaultdict(lambda : {})
         self.renderedBlocks = []
         self.topLayer = defaultdict(lambda : None)
+        self.lightSources = []
+        self._display_surf = displaySurf
         for x in range(-Physics.MAPWIDTH, Physics.MAPWIDTH):
-            height = -5 * self.noise(0.01 * x, 0, genHills)
-            height += -1 * self.noise(0.06 * x, 0, genHills)
-            height += -0.5 * self.noise(0.12 * x, 0, genHills)
+            height = -5 * self.Noise(0.01 * x, 0, genHills)
+            height += -1 * self.Noise(0.06 * x, 0, genHills)
+            height += -0.5 * self.Noise(0.12 * x, 0, genHills)
             height = math.pow(height, 3)
             first = True
             for y in range(int(height), Physics.MAPDEPTH):
                 if first:
-                    if self.GetBiome(y) == Biome.WATER:
+                    if self.GetBlockType(y) == BlockType.WATER:
                         for yn in range(3, y + 1):
-                            self.blocks[x][yn] = Block(x*Physics.BLOCKWIDTH, yn*Physics.BLOCKHEIGHT, Biome.WATER)
+                            self.blocks[x][yn] = Block(x*Physics.BLOCKWIDTH, yn*Physics.BLOCKHEIGHT, BlockType.WATER)
                     else:
-                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, self.GetBiome(y))
+                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, self.GetBlockType(y))
 
                     self.topLayer[x] = (self.blocks[x][y], y)
                     first = False
                 else:
-                    if self.topLayer[x][0].color == Biome.GRASS and abs(y - self.topLayer[x][1]) < 3:
-                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, Biome.DIRT)
+                    if self.topLayer[x][0].color == BlockType.GRASS and abs(y - self.topLayer[x][1]) < 3:
+                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, BlockType.DIRT)
                     else:
-                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, Biome.STONE)
+                        self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, BlockType.STONE)
 
         #Caves
         for x in range(-Physics.MAPWIDTH, Physics.MAPWIDTH):
             if x in self.topLayer:
                 for y in range(self.topLayer[x][1], Physics.MAPDEPTH):
-                    cave = 1 * self.noise(0.02 * x, 0.05 * y, genCaves) 
-                    if cave < -0.4 and self.blocks[x][y].color != Biome.WATER:
+                    cave = 1 * self.Noise(0.02 * x, 0.05 * y, genCaves) 
+                    if cave < -0.4 and self.blocks[x][y].color != BlockType.WATER:
                         self.blocks[x].pop(y, None)
 
         #Spread water
@@ -57,7 +59,7 @@ class World():
         #for x in range(-Physics.MAPWIDTH, Physics.MAPWIDTH):
         #    for y in range(self.topLayer[x][1], Physics.MAPDEPTH):
         #        if y in self.blocks[x]:
-        #            if self.blocks[x][y].color == Biome.WATER:
+        #            if self.blocks[x][y].color == BlockType.WATER:
         #                self.SpreadWater(x + 1, y, visited)
         #                self.SpreadWater(x - 1, y, visited)
         #                self.SpreadWater(x, y + 1, visited)
@@ -69,23 +71,23 @@ class World():
         visited[x][y] = True
         if x >= -Physics.MAPWIDTH and x <= Physics.MAPWIDTH and y > -Physics.MAPDEPTH and y < Physics.MAPDEPTH:
             if y not in self.blocks[x]:
-                self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, Biome.WATER)
+                self.blocks[x][y] = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, BlockType.WATER)
                 self.SpreadWater(x + 1, y, visited)
                 self.SpreadWater(x - 1, y, visited)
                 self.SpreadWater(x, y + 1, visited)
         
-    def GetBiome(self, y):
+    def GetBlockType(self, y):
         #if y > 2:
-        #    return Biome.WATER
+        #    return BlockType.WATER
         if y > 0:
-            return Biome.DIRT
+            return BlockType.DIRT
         if y > -20:
-            return Biome.GRASS
+            return BlockType.GRASS
         if y > -30:
-            return Biome.STONE
-        return Biome.SNOW
+            return BlockType.STONE
+        return BlockType.SNOW
     
-    def noise(self, x, y, gen):
+    def Noise(self, x, y, gen):
         return gen.noise2d(x, y)
     
     def CollisionCheck(self, objects):
@@ -102,7 +104,7 @@ class World():
         hitbox = pygame.Rect(obj.x, math.ceil(obj.y), obj.width, obj.height)
         for block in blocks:
             if hitbox.colliderect(block.hitboxWorldFrame):
-                if block.color == Biome.WATER:
+                if block.color == BlockType.WATER:
                     obj.InWater()
                 else:
                     if dx > 0:
@@ -119,50 +121,102 @@ class World():
                         obj.HitRoof()
                     break
     
-    def closestIntersectingBlock(self, ray, distance):
+    def ClosestIntersectingBlock(self, ray, distance, ignoreBlock=None):
         dx0 = ray[0][0] - ray[1][0]
         dy0 = ray[0][1] - ray[1][1]
         x0 = ray[0][0]
         y0 = ray[0][1]
-        stepsize = 1
+        stepsize = 20
         dx = dx0/(abs(dx0) + abs(dy0))
         dy = dy0/(abs(dx0) + abs(dy0))
         x = x0
         y = y0
-        for n in range(0, distance):
-            x -= dx * 10
-            y -= dy * 10
+        for _ in range(0, distance):
+            x -= dx * stepsize
+            y -= dy * stepsize
             if math.hypot(x - x0, y - y0) > distance:
                 return None
             blocks = self.BlocksAt((x, y), 10)
             if blocks:
                 for block in blocks:
-                    return block
+                    if ignoreBlock in blocks:
+                        pass
+                    else:
+                        return block
+
+    def RenderBlocks(self, camera):
+        blocks = self.BlocksAt(camera.GetFocusPos(), Screen.RENDERDISTANCE)
+        camera.PlaceInScene(blocks)
+        for block in blocks:
+            if block.render:
+                if block.highlighted:
+                    pygame.draw.rect(self._display_surf, (255, 0, 0), block.hitbox)
+                    block.highlighted = False
+                else:
+                    pygame.draw.rect(self._display_surf, block.color, block.hitbox)
+        for block in self.renderedBlocks:
+            block.render -= 1
+            if not block.render:
+                self.renderedBlocks.remove(block)
     
     def SpawnCreatures(self, player, creatures):
         for creature in creatures:
             if abs(player.x - creature.x) > Physics.SPAWNDISTANCE:
                 creatures.remove(creature)
-        for n in range(Physics.NRCREATURES - len(creatures)):
+        for _ in range(Physics.NRCREATURES - len(creatures)):
             r = random.random()
             x = random.randrange(-Physics.SPAWNDISTANCE, Physics.SPAWNDISTANCE)
             y = self.GetTopLayerCoordinate(int(x/Physics.BLOCKWIDTH)) - 1
             y *= Physics.BLOCKHEIGHT
+            creature = None
             if r < 0.05:
-                creatures.append(Zombie(x, y))
+                creature = Zombie(x, y)
             elif r < 0.4:
-                creatures.append(Sheep(x, y))
+                creature = Sheep(x, y)
             else:
-                creatures.append(Pigg(x, y))
+                creature = Pigg(x, y)
+            creatures.append(creature)
 
+    def AddLight(self, block):
+        self.lightSources.append(block)
 
-    def Blocks(self):
-        return self.blocks
+    def LightSource(self):
+        maxRays = 100
+        for light in self.lightSources:
+            light.render = 200
+            nrRays = int(maxRays/len(self.lightSources))
+            x, y = light.x, light.y 
+            x += Physics.BLOCKWIDTH/2
+            y += Physics.BLOCKHEIGHT/2
+            for _ in range(nrRays):
+                angle = random.random()*2*math.pi
+                dx = math.cos(angle)
+                dy = math.sin(angle)
+                rx = x + dx
+                ry = y + dy
+                block = self.ClosestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE, ignoreBlock=light)
+                if block:
+                    block.render = 100
+                    if block not in self.renderedBlocks:
+                        self.renderedBlocks.append(block)
     
     def GetTopLayerCoordinate(self, x):
         return self.topLayer[x][1]
+
+    def roundMultiple(self, x, multiple):
+        return multiple*round(x/multiple)
+
+    def CreateBlockAt(self, pos, blockType):
+        if self.BlocksAt(pos):
+            return False
+        x, y = pos
+        block = Block(self.roundMultiple(x, Physics.BLOCKWIDTH), self.roundMultiple(y, Physics.BLOCKHEIGHT), blockType)
+        self.blocks[round((x) / Physics.BLOCKWIDTH)][round((y) / Physics.BLOCKHEIGHT)] = block
+        if block.color == BlockType.LIGHT:
+            self.AddLight(block)
+        return block
     
-    def BlocksAt(self, pos, distance):
+    def BlocksAt(self, pos, distance=20):
         blocks = []
         x, y = pos
         xBlock = (x) / Physics.BLOCKWIDTH
@@ -175,19 +229,22 @@ class World():
         return blocks
     
     def DeleteBlock(self, block):
+        if block.color == BlockType.LIGHT:
+            self.lightSources.remove(block)
         x = (block.hitboxWorldFrame.x) / Physics.BLOCKWIDTH
         y = (block.hitboxWorldFrame.y) / Physics.BLOCKHEIGHT
         self.blocks[x].pop(y, None)
 
 class Block():
-    def __init__(self, x, y, biome):
-        self.color = biome
+    def __init__(self, x, y, BlockType, translucent=False):
+        self.color = BlockType
         self.hitbox = pygame.Rect(0, 0, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
         self.hitboxWorldFrame = pygame.Rect(x, y, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
         self.x = x
         self.y = y
         self.highlighted = False
         self.render = False
+        self.translucent = translucent
 
 if __name__ == "__main__" :
     World()

@@ -6,13 +6,18 @@ class Direction(Enum):
     RIGHT = "RIGHT"
     LEFT = "LEFT"
 
-class Biome():
+class Action(Enum):
+    DESTROY = "DESTROY"
+    BUILD = "BUILD"
+
+class BlockType():
     WATER = (0, 0, 255, 128)
     STONE = (100, 100, 100)
     DIRT = (128, 64, 0)
     GRASS = (0, 255, 0)
     SNOW = (255, 255, 255)
     BEACH = (203, 201, 105)
+    LIGHT = (240, 247, 10)
 
 class Physics():
     FPS = 120
