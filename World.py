@@ -15,7 +15,8 @@ from opensimplex import OpenSimplex
 import math
 
 class World():
-    def __init__(self, displaySurf):
+    def __init__(self, displaySurf, camera):
+        self.camera = camera
         self.seed = int(random.random() * 100000.0)
         genHills = OpenSimplex(self.seed)
         genCaves = OpenSimplex(self.seed)
@@ -136,25 +137,21 @@ class World():
             y -= dy * stepsize
             if math.hypot(x - x0, y - y0) > distance:
                 return None
-            blocks = self.BlocksAt((x, y), 10)
-            if blocks:
-                for block in blocks:
-                    if ignoreBlock in blocks:
-                        pass
-                    else:
-                        return block
+            block = self.BlockAt(self.camera.WorldToBlockgrid((x, y)))
+            if block:
+                if ignoreBlock == block:
+                    return None
+                return block
 
-    def RenderBlocks(self, camera):
-        blocks = self.BlocksAt(camera.GetFocusPos(), Screen.RENDERDISTANCE)
-        camera.PlaceInScene(blocks)
-        for block in blocks:
+    def RenderBlocks(self):
+        self.camera.PlaceInScene(self.renderedBlocks)
+        for block in self.renderedBlocks:
             if block.render:
                 if block.highlighted:
                     pygame.draw.rect(self._display_surf, (255, 0, 0), block.hitbox)
                     block.highlighted = False
                 else:
                     pygame.draw.rect(self._display_surf, block.color, block.hitbox)
-        for block in self.renderedBlocks:
             block.render -= 1
             if not block.render:
                 self.renderedBlocks.remove(block)
@@ -203,19 +200,30 @@ class World():
     def GetTopLayerCoordinate(self, x):
         return self.topLayer[x][1]
 
-    def roundMultiple(self, x, multiple):
-        return multiple*round(x/multiple)
-
     def CreateBlockAt(self, pos, blockType):
-        if self.BlocksAt(pos):
+        x, y = self.camera.WorldToBlockgrid(pos)
+        if self.BlockAt((x, y)):
             return False
-        x, y = pos
-        block = Block(self.roundMultiple(x, Physics.BLOCKWIDTH), self.roundMultiple(y, Physics.BLOCKHEIGHT), blockType)
-        self.blocks[round((x) / Physics.BLOCKWIDTH)][round((y) / Physics.BLOCKHEIGHT)] = block
+        block = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
+        self.blocks[x][y] = block
         if block.color == BlockType.LIGHT:
             self.AddLight(block)
         return block
     
+    def DeleteBlock(self, block):
+        self.renderedBlocks.remove(block)
+        if block.color == BlockType.LIGHT:
+            self.lightSources.remove(block)
+        x = (block.hitboxWorldFrame.x) / Physics.BLOCKWIDTH
+        y = (block.hitboxWorldFrame.y) / Physics.BLOCKHEIGHT
+        self.blocks[x].pop(y, None)
+    
+    def BlockAt(self, pos):
+        x, y = pos
+        if x in self.blocks and y in self.blocks[x] and self.blocks[x][y]:
+            return self.blocks[x][y]
+        return None
+        
     def BlocksAt(self, pos, distance=20):
         blocks = []
         x, y = pos
@@ -227,13 +235,6 @@ class World():
                 if xPos in self.blocks and yPos in self.blocks[xPos] and self.blocks[xPos][yPos]:
                     blocks.append(self.blocks[xPos][yPos])
         return blocks
-    
-    def DeleteBlock(self, block):
-        if block.color == BlockType.LIGHT:
-            self.lightSources.remove(block)
-        x = (block.hitboxWorldFrame.x) / Physics.BLOCKWIDTH
-        y = (block.hitboxWorldFrame.y) / Physics.BLOCKHEIGHT
-        self.blocks[x].pop(y, None)
 
 class Block():
     def __init__(self, x, y, BlockType, translucent=False):

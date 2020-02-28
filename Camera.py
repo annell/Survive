@@ -34,6 +34,13 @@ class Camera():
         x, y = pos
         return x + self.cameraFrame.x, y + self.cameraFrame.y
 
+    def CameraToBlockgrid(self, pos):
+        return self.WorldToBlockgrid(self.CameraToWorld(pos))
+    
+    def WorldToBlockgrid(self, pos):
+        x, y = pos
+        return (round(x/Physics.BLOCKWIDTH - 0.5), round(y/Physics.BLOCKHEIGHT - 0.5))
+
     def GetCenterScreenWorldFrame(self):
         x = (self.cameraFrame.x + Screen.WIDTH/2)/Physics.BLOCKWIDTH
         y = (self.cameraFrame.y + Screen.HEIGHT/2)/Physics.BLOCKHEIGHT

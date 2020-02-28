@@ -24,7 +24,7 @@ class App:
  
     def on_init(self):
         self.camera = Camera()
-        self.world = World(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE))
+        self.world = World(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera)
         self.player = Player(0, -35)
         self.world.AddLight(self.player)
         self.entities = [self.player]
@@ -72,9 +72,7 @@ class App:
             self.player.Action(self.world, Action.DESTROY)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             #self.player.Action(self.world, Action.BUILD)
-            mPos = pygame.mouse.get_pos()
-            pos = self.camera.CameraToWorld(mPos)
-            self.world.CreateBlockAt(pos, BlockType.LIGHT)
+            self.world.CreateBlockAt(self.camera.CameraToWorld(pygame.mouse.get_pos()), BlockType.LIGHT)
 
     def on_loop(self):
         self.world.SpawnCreatures(self.player, self.entities)
@@ -89,7 +87,7 @@ class App:
 
         #world
         self.camera.PlaceInScene(self.entities)
-        self.world.RenderBlocks(self.camera)
+        self.world.RenderBlocks()
 
         for entity in self.entities:
             pygame.draw.rect(self.world._display_surf, entity.color, entity.hitbox)
@@ -100,18 +98,10 @@ class App:
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
         self.draw_text("Press p to pause", (0, 40))
-
-        #self.draw_text("({}, {})".format(x, y), (0, 70))
-        #x, y = self.camera.CameraToWorld(pygame.mouse.get_pos())
-        #for line in self.visionLines:
-            #x, y, block = line
-            #pygame.draw.line(self.world._display_surf, (255, 255, 255), self.camera.WorldToCamera((x, y)), (block.hitbox.x, block.hitbox.y))
-        #blocksAtMouse = self.world.BlocksAt((x, y), 50)
-        #startY = 80
-        #for block in blocksAtMouse:
-        #    self.draw_text("({}, {}) Color: {}".format(block.hitboxWorldFrame.x/Physics.BLOCKWIDTH, block.hitboxWorldFrame.y/Physics.BLOCKHEIGHT, block.color), (0, startY))
-        #    startY += 10
-
+        self.draw_text("({}, {})".format(*self.camera.CameraToBlockgrid(pygame.mouse.get_pos())), (0, 70))
+        block = self.world.BlockAt(self.camera.CameraToBlockgrid(pygame.mouse.get_pos()))
+        if block:
+            self.draw_text("({}, {}) Color: {}".format(*self.camera.CameraToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
         pygame.display.update()
     
     def draw_text(self, text, position):
