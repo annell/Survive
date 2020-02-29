@@ -1,6 +1,5 @@
 from Common import Direction
 from Common import Physics 
-from Common import Screen
 from Common import BlockType
 from Common import Action
 import pygame
@@ -126,9 +125,9 @@ class Player(Creature):
         self.selectedBlock = False
         self.mouseDirection = (0, 0)
     
-    def SelectBlock(self, pos, world):
+    def SelectBlock(self, pos, engine):
         x, y = pos
-        block = world.ClosestIntersectingBlock(((self.x + self.width/2, self.y + self.height/2), (x, y)), 30)
+        block = engine.ClosestIntersectingBlock(((self.x + self.width/2, self.y + self.height/2), (x, y)), 30)
         self.selectedBlock = block
         dx0, dy0 = pos
         if (dx0 + dy0) == 0:
@@ -140,13 +139,13 @@ class Player(Creature):
         if block:
             block.highlighted = True
     
-    def Action(self, world, action, pos=None):
+    def Action(self, engine, action, pos=None):
         if action == Action.DESTROY:
             if self.selectedBlock and not self.selectedBlock.color == BlockType.WATER:
-                world.DeleteBlock(self.selectedBlock)
+                engine.DeleteBlock(self.selectedBlock)
         elif action == Action.BUILD:
             if self.selectedBlock:
-                world.CreateBlockAt(pos, BlockType.LIGHT)
+                engine.CreateBlock(pos, BlockType.LIGHT)
 
 class Pigg(AiControlled):
     def __init__(self, x, y):

@@ -1,5 +1,4 @@
 import pygame
-import math
 
 class Camera():
     def __init__(self, width, height, blockWidth, blockHeight): 

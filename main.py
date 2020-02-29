@@ -5,9 +5,11 @@ import pygame
 from pygame.locals import *
 
 from Camera import Camera
-from Common import Direction, Physics, Screen
-from Creature import *
-from World import World
+from Common import Direction, Physics, Screen, BlockType
+from Creature import Player
+from Engine import Engine 
+from Enviroment import Enviroment 
+
 
 
 class App:
@@ -24,7 +26,8 @@ class App:
  
     def on_init(self):
         self.camera = Camera(Screen.WIDTH, Screen.HEIGHT, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
-        self.world = World(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera)
+        self.enviroment = Enviroment(Physics.MAPWIDTH, Physics.MAPDEPTH, int(random.random() * 100000.0))
+        self.world = Engine(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera, self.enviroment)
         self.player = Player(0, -35)
         self.world.AddLight(self.player)
         self.entities = [self.player]
@@ -72,7 +75,7 @@ class App:
             self.player.Action(self.world, Action.DESTROY)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             #self.player.Action(self.world, Action.BUILD)
-            self.world.CreateBlockAt(self.camera.CameraToWorld(pygame.mouse.get_pos()), BlockType.LIGHT)
+            self.world.CreateBlock(self.camera.CameraToWorld(pygame.mouse.get_pos()), BlockType.LIGHT)
 
     def on_loop(self):
         self.world.SpawnCreatures(self.player, self.entities)
@@ -94,7 +97,7 @@ class App:
 
         
         #Scoreboard
-        self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.world.seed, self.player.onGround), (0,0))
+        self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.enviroment.seed, self.player.onGround), (0,0))
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
         self.draw_text("Press p to pause", (0, 40))
