@@ -23,7 +23,7 @@ class App:
         pygame.display.set_caption("Survive")
  
     def on_init(self):
-        self.camera = Camera()
+        self.camera = Camera(Screen.WIDTH, Screen.HEIGHT, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
         self.world = World(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera)
         self.player = Player(0, -35)
         self.world.AddLight(self.player)
@@ -94,7 +94,7 @@ class App:
 
         
         #Scoreboard
-        self.draw_text("({}, {}) @ World: {} | {}".format(*self.camera.GetCenterScreenWorldFrame(), self.world.seed, self.player.onGround), (0,0))
+        self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.world.seed, self.player.onGround), (0,0))
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
         self.draw_text("Press p to pause", (0, 40))

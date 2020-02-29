@@ -1,34 +1,38 @@
 import pygame
-from Common import Screen, Physics
 import math
 
 class Camera():
-    def __init__(self): 
-        self.cameraFrame = pygame.Rect(0, 0, Screen.WIDTH, Screen.HEIGHT)
+    def __init__(self, width, height, blockWidth, blockHeight): 
+        self.width = width
+        self.height = height
+        self.blockWidth = blockWidth
+        self.blockHeight = blockHeight
+        self.cameraFrame = pygame.Rect(0, 0, self.width, self.height)
         self.focus = None
     
     def SetFocusPos(self, focus):
         self.focus = focus
     
     def GetFocusPos(self):
+        if not self.focus:
+            return None
         return self.focus.GetPosition()
     
-    def CenterScreenAt(self):
-        self.cameraFrame.x, self.cameraFrame.y = self.CameraCornerWorldFrame(self.GetFocusPos())
+    def CenterScreenAtFocus(self):
+        pos = self.GetFocusPos()
+        if not pos:
+            return
+        self.cameraFrame.x, self.cameraFrame.y = self.CameraCornerWorldFrame(pos)
     
     def PlaceInScene(self, objects):
-        self.CenterScreenAt()
+        self.CenterScreenAtFocus()
         for obj in objects:
             obj.hitbox.x = obj.x - self.cameraFrame.x
             obj.hitbox.y = obj.y - self.cameraFrame.y
 
     def CameraCornerWorldFrame(self, pos):
         x, y = pos
-        return (x - Screen.WIDTH/2, y - Screen.HEIGHT/2)
-
-    def WorldToCamera(self, pos):
-        x, y = pos
-        return (x - Screen.WIDTH/2, y - Screen.HEIGHT/2)
+        return (x - self.width/2, y - self.height/2)
     
     def CameraToWorld(self, pos):
         x, y = pos
@@ -39,14 +43,4 @@ class Camera():
     
     def WorldToBlockgrid(self, pos):
         x, y = pos
-        return (round(x/Physics.BLOCKWIDTH - 0.5), round(y/Physics.BLOCKHEIGHT - 0.5))
-
-    def GetCenterScreenWorldFrame(self):
-        x = (self.cameraFrame.x + Screen.WIDTH/2)/Physics.BLOCKWIDTH
-        y = (self.cameraFrame.y + Screen.HEIGHT/2)/Physics.BLOCKHEIGHT
-        return (x, y)
-
-    def GetCenterScreenCameraFrame(self):
-        x = Screen.WIDTH/2
-        y = Screen.HEIGHT/2
-        return (x, y)
+        return (round(x/self.blockWidth - 0.5), round(y/self.blockHeight - 0.5))
