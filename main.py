@@ -5,7 +5,7 @@ import pygame
 from pygame.locals import *
 
 from Camera import Camera
-from Common import Direction, Physics, Screen, BlockType
+from Common import Direction, Physics, Screen, BlockType, Action
 from Creature import Player
 from Engine import Engine 
 from Enviroment import Enviroment 
@@ -74,8 +74,7 @@ class App:
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.player.Action(self.world, Action.DESTROY)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            #self.player.Action(self.world, Action.BUILD)
-            self.world.CreateBlock(self.camera.CameraToWorld(pygame.mouse.get_pos()), BlockType.LIGHT)
+            self.player.Action(self.world, Action.BUILD, self.camera.CameraToWorld(pygame.mouse.get_pos()))
 
     def on_loop(self):
         self.world.SpawnCreatures(self.player, self.entities)

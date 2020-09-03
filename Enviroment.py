@@ -70,8 +70,8 @@ class Enviroment():
                 self.SpreadWater(x, y + 1, visited)
 
     def GetBlockType(self, y):
-        #if y > 2:
-        #    return BlockType.WATER
+        if y > 2:
+            return BlockType.WATER
         if y > 0:
             return BlockType.DIRT
         if y > -20:
@@ -85,6 +85,18 @@ class Enviroment():
         if x in self.blocks and y in self.blocks[x] and self.blocks[x][y]:
             return self.blocks[x][y]
         return None
+    
+    def IsAdjecentBlock(self, pos):
+        x, y = pos
+        if self.BlockAt((x + 1, y)):
+            return True
+        if self.BlockAt((x - 1, y)):
+            return True
+        if self.BlockAt((x, y + 1)):
+            return True
+        if self.BlockAt((x, y - 1)):
+            return True
+        return False
 
     def BlocksAt(self, pos, distance=20):
         blocks = []

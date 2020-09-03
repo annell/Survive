@@ -63,7 +63,7 @@ class Engine():
         for _ in range(0, distance):
             x -= dx * stepsize
             y -= dy * stepsize
-            if math.hypot(x - x0, y - y0) > distance:
+            if (abs(x - x0) + abs(y - y0)) > distance:
                 return None
             block = self.BlockAt(self.camera.WorldToBlockgrid((x, y)))
             if block:
