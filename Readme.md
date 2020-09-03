@@ -1,3 +1,4 @@
+TODO list
 Features
 - Fix raytracing to become more consistent.
 - I want to have different types of blocks that i can place
