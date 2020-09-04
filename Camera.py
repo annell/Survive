@@ -26,8 +26,7 @@ class Camera():
     def PlaceInScene(self, objects):
         self.CenterScreenAtFocus()
         for obj in objects:
-            obj.hitbox.x = obj.x - self.cameraFrame.x
-            obj.hitbox.y = obj.y - self.cameraFrame.y
+            obj.hitbox.x, obj.hitbox.y = self.WorlToCamera(obj.GetPosition())
 
     def CameraCornerWorldFrame(self, pos):
         x, y = pos
@@ -36,6 +35,10 @@ class Camera():
     def CameraToWorld(self, pos):
         x, y = pos
         return x + self.cameraFrame.x, y + self.cameraFrame.y
+    
+    def WorlToCamera(self, pos):
+        x, y = pos
+        return x - self.cameraFrame.x, y - self.cameraFrame.y
 
     def CameraToBlockgrid(self, pos):
         return self.WorldToBlockgrid(self.CameraToWorld(pos))

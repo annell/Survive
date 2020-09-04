@@ -50,16 +50,28 @@ class Engine():
                         obj.HitRoof()
                     break
     
-    def ClosestIntersectingBlock(self, ray, distance, ignoreBlock=None):
+    def GetNormalizedVector(self, ray):
         dx0 = ray[0][0] - ray[1][0]
         dy0 = ray[0][1] - ray[1][1]
         x0 = ray[0][0]
         y0 = ray[0][1]
-        stepsize = 20
         dx = dx0/(abs(dx0) + abs(dy0))
         dy = dy0/(abs(dx0) + abs(dy0))
-        x = x0
-        y = y0
+        return (dx, dy)
+    
+    def GetPointAlongLineAtDistance(self, ray, distance):
+        dx = ray[0][0] - ray[1][0]
+        dy = ray[0][1] - ray[1][1]
+        t = math.atan2(dy, dx)
+        x = math.cos(t) * distance * -1
+        y = math.sin(t) * distance * -1
+        return x, y
+    
+    def ClosestIntersectingBlock(self, ray, distance, ignoreBlock=None):
+        dx, dy = self.GetNormalizedVector(ray)
+        x = x0 = ray[0][0]
+        y = y0 = ray[0][1]
+        stepsize = 20
         for _ in range(0, distance):
             x -= dx * stepsize
             y -= dy * stepsize

@@ -138,3 +138,6 @@ class Block():
         self.highlighted = False
         self.render = False
         self.translucent = translucent
+    
+    def GetPosition(self):
+        return (self.x, self.y)

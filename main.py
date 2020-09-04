@@ -90,6 +90,14 @@ class App:
         #world
         self.camera.PlaceInScene(self.entities)
         self.world.RenderBlocks()
+        
+        center = self.camera.WorlToCamera(self.player.GetPositionCentered())
+        mouse = self.camera.CameraToWorld(pygame.mouse.get_pos())
+        player = self.player.GetPositionCentered() 
+        ray = (player, mouse)
+        distPos = self.world.GetPointAlongLineAtDistance(ray, self.player.reach)
+        distPosCam = (center[0] + distPos[0], center[1] + distPos[1])
+        pygame.draw.line(self.world._display_surf, (0, 0, 0), center, distPosCam)
 
         for entity in self.entities:
             pygame.draw.rect(self.world._display_surf, entity.color, entity.hitbox)

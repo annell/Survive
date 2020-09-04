@@ -4,7 +4,7 @@ from Common import BlockType
 from Common import Action
 import pygame
 import random
-
+import math
 
 class Creature():
     def __init__(self, x, y, width, height, color, speed, reach=0):
@@ -151,8 +151,9 @@ class Player(Creature):
         elif action == Action.BUILD:
             x, y = pos
             xCentered, yCentered = self.GetPositionCentered()
-            distance = abs(x - xCentered) + abs(y - yCentered)
-            if distance < self.reach and engine.enviroment.IsAdjecentBlock(engine.camera.WorldToBlockgrid(pos)):
+            distance = math.sqrt((x - xCentered)**2 + (y - yCentered)**2)
+            
+            if distance <= self.reach and engine.enviroment.IsAdjecentBlock(engine.camera.WorldToBlockgrid(pos)):
                     engine.CreateBlock(pos, BlockType.LIGHT)
 
 class Pigg(AiControlled):
