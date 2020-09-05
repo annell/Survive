@@ -128,19 +128,10 @@ class Player(Creature):
         reach = 60
         super().__init__(x, y, width, height, color, speed, reach)
         self.selectedBlock = False
-        self.mouseDirection = (0, 0)
     
     def SelectBlock(self, pos, engine):
-        x, y = pos
-        block = engine.ClosestIntersectingBlock((self.GetPositionCentered(), (x, y)), self.reach)
+        block = engine.ClosestIntersectingBlock((self.GetPositionCentered(), pos), self.reach)
         self.selectedBlock = block
-        dx0, dy0 = pos
-        if (dx0 + dy0) == 0:
-            self.mouseDirection = (0, 0)
-        else:
-            dx = self.x + dx0*100/(abs(dx0) + abs(dy0))
-            dy = self.y + dy0*100/(abs(dx0) + abs(dy0))
-            self.mouseDirection = (dx, dy)
         if block:
             block.highlighted = True
     

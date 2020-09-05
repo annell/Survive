@@ -7,6 +7,7 @@ from Common import BlockType
 
 class Enviroment():
     def __init__(self, width, height, seed):
+        self.blockindex = 0
         self.blocks = defaultdict(lambda : {})
         self.topLayer = defaultdict(lambda : None)
         self.seed = seed
@@ -115,12 +116,19 @@ class Enviroment():
         return gen.noise2d(x, y)
 
     def GetTopLayerCoordinate(self, x):
+        block = self.BlockAt((x, self.topLayer[x][1]))
+        if not block:
+            for y in range(self.height, -self.height, -1):
+                block = self.BlockAt((x, y))
+                if block:
+                    self.topLayer[x] = (block, y)
         return self.topLayer[x][1]
     
     def CreateBlock(self, pos, blockType):
         x, y = pos
-        block = Block(x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
+        block = Block(self.blockindex, x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
         self.blocks[x][y] = block
+        self.blockindex += 1
         return block
 
     def DeleteBlock(self, block):
@@ -129,7 +137,8 @@ class Enviroment():
         self.blocks[x].pop(y, None)
 
 class Block():
-    def __init__(self, x, y, BlockType, translucent=False):
+    def __init__(self, id, x, y, BlockType, translucent=False):
+        self.id = id
         self.color = BlockType
         self.hitbox = pygame.Rect(0, 0, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
         self.hitboxWorldFrame = pygame.Rect(x, y, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)

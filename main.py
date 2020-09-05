@@ -1,5 +1,6 @@
 import math
 import random
+import time
 
 import pygame
 from pygame.locals import *
@@ -19,6 +20,8 @@ class App:
         self.size = self.weight, self.height = Screen.WIDTH, Screen.HEIGHT
         self.fps = Physics.FPS
         self.playtime = 0.0
+        self.lastTime = time.time()
+        self.currFps = 0
         self.clock = pygame.time.Clock()
         pygame.mixer.init()
         pygame.init()
@@ -29,11 +32,11 @@ class App:
         self.enviroment = Enviroment(Physics.MAPWIDTH, Physics.MAPDEPTH, int(random.random() * 100000.0))
         self.world = Engine(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera, self.enviroment)
         self.player = Player(0, -35)
-        self.world.AddLight(self.player)
+        #self.world.AddLight(self.player)
         self.entities = [self.player]
         self._running = True
         self.visionLines = []
-        self.font = pygame.font.SysFont('mono', 14, bold=True)
+        self.font = pygame.font.SysFont('mono', 16)
         self.n = 0
         self.camera.SetFocusPos(self.entities[self.n])
  
@@ -81,16 +84,25 @@ class App:
         for entity in self.entities:
             entity.Step()
         self.world.CollisionCheck(self.entities)
-        self.world.LightSource()
+        self.camera.PlaceInScene(self.entities)
+        self.world.LightSource(self.player.GetPosition())
         self.player.SelectBlock(self.camera.CameraToWorld(pygame.mouse.get_pos()), self.world)
         
     def on_render(self):
-        self.world._display_surf.fill((10, 160, 250))
-
-        #world
-        self.camera.PlaceInScene(self.entities)
+        self.draw_background()
         self.world.RenderBlocks()
-        
+        self.draw_hud()
+        self.draw_entities()
+        pygame.display.update()
+    
+    def draw_background(self):
+        self.world._display_surf.fill((10, 160, 250))
+    
+    def draw_entities(self):
+        for entity in self.entities:
+            pygame.draw.rect(self.world._display_surf, entity.color, entity.hitbox)
+    
+    def draw_hud(self):
         center = self.camera.WorlToCamera(self.player.GetPositionCentered())
         mouse = self.camera.CameraToWorld(pygame.mouse.get_pos())
         player = self.player.GetPositionCentered() 
@@ -99,12 +111,8 @@ class App:
         distPosCam = (center[0] + distPos[0], center[1] + distPos[1])
         pygame.draw.line(self.world._display_surf, (0, 0, 0), center, distPosCam)
 
-        for entity in self.entities:
-            pygame.draw.rect(self.world._display_surf, entity.color, entity.hitbox)
-
-        
-        #Scoreboard
         self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.enviroment.seed, self.player.onGround), (0,0))
+        self.draw_text("FPS: {}".format(self.currFps), (0, 10))
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
         self.draw_text("Press p to pause", (0, 40))
@@ -112,7 +120,6 @@ class App:
         block = self.world.BlockAt(self.camera.CameraToBlockgrid(pygame.mouse.get_pos()))
         if block:
             self.draw_text("({}, {}) Color: {}".format(*self.camera.CameraToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
-        pygame.display.update()
     
     def draw_text(self, text, position):
         surface = self.font.render(text, True, (255, 255, 255))
@@ -126,6 +133,9 @@ class App:
             self._running = False
  
         while( not self._close ):
+            currTime = time.time()
+            self.currFps = int(1 /(currTime - self.lastTime))
+            self.lastTime = currTime
             for event in pygame.event.get():
                 self.on_event(event)
             if self._running:

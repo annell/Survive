@@ -17,7 +17,7 @@ class Engine():
         self.enviroment = enviroment
         self._display_surf = displaySurf
         self.lightSources = []
-        self.renderedBlocks = []
+        self.renderedBlocks = {}
     
     def CollisionCheck(self, objects):
         for obj in objects:
@@ -75,7 +75,7 @@ class Engine():
         for _ in range(0, distance):
             x -= dx * stepsize
             y -= dy * stepsize
-            if (abs(x - x0) + abs(y - y0)) > distance:
+            if self.GetDistance((x0, y0), (x, y)) >= distance:
                 return None
             block = self.BlockAt(self.camera.WorldToBlockgrid((x, y)))
             if block:
@@ -84,8 +84,8 @@ class Engine():
                 return block
 
     def RenderBlocks(self):
-        self.camera.PlaceInScene(self.renderedBlocks)
-        for block in self.renderedBlocks:
+        self.camera.PlaceInScene(self.renderedBlocks.values())
+        for block in self.renderedBlocks.copy().values():
             if block.render:
                 if block.highlighted:
                     pygame.draw.rect(self._display_surf, (255, 0, 0), block.hitbox)
@@ -94,7 +94,7 @@ class Engine():
                     pygame.draw.rect(self._display_surf, block.color, block.hitbox)
             block.render -= 1
             if not block.render:
-                self.renderedBlocks.remove(block)
+                self.renderedBlocks.pop(block.id)
     
     def SpawnCreatures(self, player, creatures):
         for creature in creatures:
@@ -117,7 +117,20 @@ class Engine():
     def AddLight(self, block):
         self.lightSources.append(block)
 
-    def LightSource(self):
+    def LightSource(self, pos):
+        camX, camY = self.camera.CameraTopLeftCornerWorldFrame(pos)
+        cam2X, cam2Y = self.camera.CameraBottomRightCornerWorldFrame(pos)
+        blockPos = self.camera.WorldToBlockgrid((camX, camY))
+        blockPos2 = self.camera.WorldToBlockgrid((cam2X, cam2Y))
+        b1X, _ = blockPos
+        b2X, _ = blockPos2
+        for x in range(b1X, b2X):
+            y = self.enviroment.GetTopLayerCoordinate(x)
+            block = self.enviroment.BlockAt((x, y))
+            if block:
+                block.render = 100
+                self.renderedBlocks[block.id] = block
+
         maxRays = 100
         for light in self.lightSources:
             light.render = 200
@@ -134,8 +147,12 @@ class Engine():
                 block = self.ClosestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE, ignoreBlock=light)
                 if block:
                     block.render = 100
-                    if block not in self.renderedBlocks:
-                        self.renderedBlocks.append(block)
+                    self.renderedBlocks[block.id] = block
+
+    def GetDistance(self, pos1, pos2):
+        x1, y1 = pos1
+        x2, y2 = pos2
+        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
     
     def CreateBlock(self, pos, blockType):
         x, y = self.camera.WorldToBlockgrid(pos)
@@ -147,7 +164,8 @@ class Engine():
         return block
     
     def DeleteBlock(self, block):
-        self.renderedBlocks.remove(block)
+        if block.id in self.renderedBlocks:
+            self.renderedBlocks.pop(block.id)
         if block.color == BlockType.LIGHT:
             self.lightSources.remove(block)
         self.enviroment.DeleteBlock(block)

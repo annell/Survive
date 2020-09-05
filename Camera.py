@@ -21,16 +21,20 @@ class Camera():
         pos = self.GetFocusPos()
         if not pos:
             return
-        self.cameraFrame.x, self.cameraFrame.y = self.CameraCornerWorldFrame(pos)
+        self.cameraFrame.x, self.cameraFrame.y = self.CameraTopLeftCornerWorldFrame(pos)
     
     def PlaceInScene(self, objects):
         self.CenterScreenAtFocus()
         for obj in objects:
             obj.hitbox.x, obj.hitbox.y = self.WorlToCamera(obj.GetPosition())
 
-    def CameraCornerWorldFrame(self, pos):
+    def CameraTopLeftCornerWorldFrame(self, pos):
         x, y = pos
         return (x - self.width/2, y - self.height/2)
+
+    def CameraBottomRightCornerWorldFrame(self, pos):
+        x, y = pos
+        return (x + self.width/2, y + self.height/2)
     
     def CameraToWorld(self, pos):
         x, y = pos
