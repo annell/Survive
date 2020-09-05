@@ -6,7 +6,7 @@ import pygame
 from pygame.locals import *
 
 from Camera import Camera
-from Common import Direction, Physics, Screen, BlockType, Action
+from Common import Direction, Physics, Screen, BlockType, Item
 from Creature import Player
 from Engine import Engine 
 from Enviroment import Enviroment 
@@ -63,6 +63,18 @@ class App:
                 if self.n >= len(self.entities):
                     self.n = 0
                 self.camera.SetFocusPos(self.entities[self.n])
+            elif event.key == pygame.K_1:
+                self.player.currentItem = Item.PICKAXE
+            elif event.key == pygame.K_2:
+                self.player.currentItem = BlockType.STONE
+            elif event.key == pygame.K_3:
+                self.player.currentItem = BlockType.GRASS
+            elif event.key == pygame.K_4:
+                self.player.currentItem = BlockType.DIRT
+            elif event.key == pygame.K_5:
+                self.player.currentItem = BlockType.BEACH
+            elif event.key == pygame.K_6:
+                self.player.currentItem = BlockType.LIGHT
         
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_d:
@@ -75,9 +87,7 @@ class App:
                 self.player.Move(Direction.UP, False)
          
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self.player.Action(self.world, Action.DESTROY)
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            self.player.Action(self.world, Action.BUILD, self.camera.CameraToWorld(pygame.mouse.get_pos()))
+            self.player.Action(self.world, self.camera.CameraToWorld(pygame.mouse.get_pos()))
 
     def on_loop(self):
         self.world.SpawnCreatures(self.player, self.entities)
@@ -108,13 +118,7 @@ class App:
             pygame.draw.rect(self.world._display_surf, entity.color, entity.hitbox)
     
     def draw_hud(self):
-        center = self.camera.WorlToCamera(self.player.GetPositionCentered())
-        mouse = self.camera.CameraToWorld(pygame.mouse.get_pos())
-        player = self.player.GetPositionCentered() 
-        ray = (player, mouse)
-        distPos = self.world.GetPointAlongLineAtDistance(ray, self.player.reach)
-        distPosCam = (center[0] + distPos[0], center[1] + distPos[1])
-        pygame.draw.line(self.world._display_surf, (0, 0, 0), center, distPosCam)
+        self.draw_playerInteraction()
 
         self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.enviroment.seed, self.player.onGround), (0,0))
         self.draw_text("FPS: {}".format(self.currFps), (0, 10))
@@ -125,6 +129,13 @@ class App:
         block = self.world.BlockAt(self.camera.CameraToBlockgrid(pygame.mouse.get_pos()))
         if block:
             self.draw_text("({}, {}) Color: {}".format(*self.camera.CameraToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
+    
+    def draw_playerInteraction(self):
+        center = self.camera.WorlToCamera(self.player.GetPositionCentered())
+        mouse = self.camera.CameraToWorld(pygame.mouse.get_pos())
+        player = self.player.GetPositionCentered() 
+        distPos = self.world.GetPointAlongLineAtDistance((player, mouse), self.player.reach)
+        pygame.draw.line(self.world._display_surf, self.player.currentItem, center, (center[0] + distPos[0], center[1] + distPos[1]), 5)
     
     def draw_text(self, text, position):
         surface = self.font.render(text, True, (255, 255, 255))

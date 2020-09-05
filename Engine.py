@@ -184,6 +184,10 @@ class Engine():
         block = self.enviroment.CreateBlock((x, y), blockType)
         if block.color == BlockType.LIGHT:
             self.AddLight(block)
+        else:
+            yTop = self.enviroment.GetTopLayerCoordinate(x)
+            if yTop > y:
+                self.enviroment.topLayer[x] = (block, y)
         return block
     
     def DeleteBlock(self, block):

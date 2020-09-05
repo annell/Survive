@@ -6,10 +6,6 @@ class Direction(Enum):
     RIGHT = "RIGHT"
     LEFT = "LEFT"
 
-class Action(Enum):
-    DESTROY = "DESTROY"
-    BUILD = "BUILD"
-
 class BlockType():
     WATER = (0, 0, 255)
     STONE = (100, 100, 100)
@@ -18,6 +14,9 @@ class BlockType():
     SNOW = (255, 255, 255)
     BEACH = (203, 201, 105)
     LIGHT = (240, 247, 10)
+
+class Item():
+    PICKAXE = (0, 0, 0)
 
 class Physics():
     FPS = 120

@@ -1,7 +1,7 @@
 from Common import Direction
 from Common import Physics 
 from Common import BlockType
-from Common import Action
+from Common import Item
 import pygame
 import random
 import math
@@ -128,6 +128,7 @@ class Player(Creature):
         reach = 60
         super().__init__(x, y, width, height, color, speed, reach)
         self.selectedBlock = False
+        self.currentItem = Item.PICKAXE
     
     def SelectBlock(self, pos, engine):
         block = engine.ClosestIntersectingBlock((self.GetPositionCentered(), pos), self.reach)
@@ -135,17 +136,17 @@ class Player(Creature):
         if block:
             block.highlighted = True
     
-    def Action(self, engine, action, pos=None):
-        if action == Action.DESTROY:
+    def Action(self, engine, pos=None):
+        if self.currentItem == Item.PICKAXE:
             if self.selectedBlock and not self.selectedBlock.color == BlockType.WATER:
                 engine.DeleteBlock(self.selectedBlock)
-        elif action == Action.BUILD:
-            x, y = pos
-            xCentered, yCentered = self.GetPositionCentered()
-            distance = math.sqrt((x - xCentered)**2 + (y - yCentered)**2)
-            
-            if distance <= self.reach and engine.enviroment.IsAdjecentBlock(engine.camera.WorldToBlockgrid(pos)):
-                    engine.CreateBlock(pos, BlockType.LIGHT)
+        else:
+            self.PlaceBlock(engine, pos, self.currentItem)
+    
+    def PlaceBlock(self, engine, pos, blockType):
+        distance = engine.GetDistance(pos, self.GetPositionCentered())
+        if distance <= self.reach and engine.enviroment.IsAdjecentBlock(engine.camera.WorldToBlockgrid(pos)):
+            engine.CreateBlock(pos, blockType)
 
 class Pigg(AiControlled):
     def __init__(self, x, y):
