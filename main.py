@@ -85,8 +85,13 @@ class App:
             entity.Step()
         self.world.CollisionCheck(self.entities)
         self.camera.PlaceInScene(self.entities)
-        self.world.LightSource(self.player.GetPosition())
         self.player.SelectBlock(self.camera.CameraToWorld(pygame.mouse.get_pos()), self.world)
+
+        self.world.renderedBlocks.clear()
+        for block in self.enviroment.BlocksAt(self.player.GetPosition(), 500):
+            self.world.renderedBlocks[block.id] = block
+        self.world.LightSource(self.player.GetPosition())
+
         
     def on_render(self):
         self.draw_background()

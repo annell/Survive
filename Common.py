@@ -11,7 +11,7 @@ class Action(Enum):
     BUILD = "BUILD"
 
 class BlockType():
-    WATER = (0, 0, 255, 128)
+    WATER = (0, 0, 255)
     STONE = (100, 100, 100)
     DIRT = (128, 64, 0)
     GRASS = (0, 255, 0)
@@ -36,4 +36,4 @@ class Screen():
     WIDTH = 1000
     HEIGHT = 400
     RENDERDISTANCE = 500
-    RAYDISTANCE = 300
+    RAYDISTANCE = 200

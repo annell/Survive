@@ -19,3 +19,4 @@ Completed:
 - Should only be able to place blocks close to me and adjecent to another block.
 - Add aim line, to help user.
 - Sun should be regarded as a lightsource, not my head
+- Add different levels of illumination

@@ -86,19 +86,40 @@ class Engine():
     def RenderBlocks(self):
         self.camera.PlaceInScene(self.renderedBlocks.values())
         for block in self.renderedBlocks.copy().values():
-            if block.render:
-                if block.highlighted:
-                    pygame.draw.rect(self._display_surf, (255, 0, 0), block.hitbox)
-                    block.highlighted = False
-                else:
-                    pygame.draw.rect(self._display_surf, block.color, block.hitbox)
-            block.render -= 1
-            if not block.render:
-                self.renderedBlocks.pop(block.id)
+            if block.highlighted:
+                self.RenderHighlight(block)
+            else:
+                self.RenderBlock(block)
+            block.render = 0
+
+    def RenderBlock(self, block):
+        illumination = block.render / 100
+        if illumination > 1:
+            illumination = 1
+        if illumination < 0:
+            illumination = 0
+        r, g, b = block.color
+        pygame.draw.rect(self._display_surf, (r*illumination, g*illumination, b*illumination), block.hitbox)
+
+    def RenderHighlight(self, block):
+        r, g, b = block.color
+        r *= 1.5
+        g *= 0.5
+        b *= 0.5
+        if r > 255:
+            r = 255
+        if r < 100:
+            r = 100
+        if g < 0:
+            g = 0
+        if b < 0:
+            b = 0
+        pygame.draw.rect(self._display_surf, (r, g, b), block.hitbox)
+        block.highlighted = False
     
     def SpawnCreatures(self, player, creatures):
         for creature in creatures:
-            if abs(player.x - creature.x) > Physics.SPAWNDISTANCE:
+            if self.GetDistance(player.GetPosition(), creature.GetPosition()) > Physics.SPAWNDISTANCE:
                 creatures.remove(creature)
         for _ in range(Physics.NRCREATURES - len(creatures)):
             r = random.random()
@@ -131,23 +152,25 @@ class Engine():
                 block.render = 100
                 self.renderedBlocks[block.id] = block
 
-        maxRays = 100
+        maxRays = 50
         for light in self.lightSources:
-            light.render = 200
-            nrRays = int(maxRays/len(self.lightSources))
-            x, y = light.x, light.y 
-            x += Physics.BLOCKWIDTH/2
-            y += Physics.BLOCKHEIGHT/2
-            for _ in range(nrRays):
-                angle = random.random()*2*math.pi
-                dx = math.cos(angle)
-                dy = math.sin(angle)
-                rx = x + dx
-                ry = y + dy
-                block = self.ClosestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE, ignoreBlock=light)
-                if block:
-                    block.render = 100
-                    self.renderedBlocks[block.id] = block
+            if self.GetDistance(light.GetPosition(), pos) < Screen.RENDERDISTANCE:
+                light.render = 200
+                nrRays = 100
+                x, y = light.x, light.y 
+                x += Physics.BLOCKWIDTH/2
+                y += Physics.BLOCKHEIGHT/2
+                for n in range(nrRays):
+                    angle = (n/nrRays)*2*math.pi
+                    dx = math.cos(angle)
+                    dy = math.sin(angle)
+                    rx = x + dx
+                    ry = y + dy
+                    block = self.ClosestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE, ignoreBlock=light)
+                    if block:
+                        distance = self.GetDistance(light.GetPosition(), block.GetPosition())
+                        block.render += 100*(Screen.RAYDISTANCE - distance)/Screen.RAYDISTANCE
+                        self.renderedBlocks[block.id] = block
 
     def GetDistance(self, pos1, pos2):
         x1, y1 = pos1
