@@ -67,6 +67,22 @@ class Engine():
         y = math.sin(t) * distance * -1
         return x, y
     
+    def ClosestIntersectingBlock2(self, ray, ignoreBlock):
+        closestBlock = None
+        closestDist = 10000000
+        n = 0
+        for block in self.enviroment.BlocksInArea(*ray):
+            if block == ignoreBlock:
+                pass
+            line = (ray[0], block.GetPosition())
+            distance = self.GetDistance(*line)
+            if distance < closestDist:
+                if self.LineBlockCollision(line, block):
+                    n +=1
+                    closestBlock = block
+                    closestDist = distance
+        return closestBlock
+    
     def ClosestIntersectingBlock(self, ray, distance, ignoreBlock=None):
         dx, dy = self.GetNormalizedVector(ray)
         x = x0 = ray[0][0]
@@ -151,11 +167,40 @@ class Engine():
             if block:
                 block.render = 100
                 self.renderedBlocks[block.id] = block
+        self.RaytraceRandom(pos)
+        #self.RaytraceEachBlock(pos)
 
+    def RaytraceEachBlock(self, pos):
+        for light in self.lightSources:
+            if self.GetDistance(light.GetPosition(), pos) < Screen.RENDERDISTANCE:
+                light.render = 100
+                x, y = light.x, light.y 
+                x += Physics.BLOCKWIDTH/2
+                y += Physics.BLOCKHEIGHT/2
+                for targetBlock in self.enviroment.BlocksAt(light.GetPosition(), Screen.RAYDISTANCE):
+                    if targetBlock != light:
+                        closestBlock = None
+                        closestDist = 10000000
+                        n = 0
+                        for block in self.enviroment.BlocksInArea(light.GetPosition(), targetBlock.GetPosition()):
+                            line = (light.GetPosition(), block.GetPosition())
+                            distance = self.GetDistance(*line)
+                            if distance < closestDist:
+                                if self.LineBlockCollision(line, block):
+                                    n +=1
+                                    closestBlock = block
+                                    closestDist = distance
+                        block = closestBlock
+                        if block:
+                            distance = self.GetDistance(light.GetPosition(), block.GetPosition())
+                            block.render += 100*(Screen.RAYDISTANCE - distance)/Screen.RAYDISTANCE
+                            self.renderedBlocks[block.id] = block
+    
+    def RaytraceRandom(self, pos):
         maxRays = 50
         for light in self.lightSources:
             if self.GetDistance(light.GetPosition(), pos) < Screen.RENDERDISTANCE:
-                light.render = 200
+                light.render = 100
                 nrRays = 100
                 x, y = light.x, light.y 
                 x += Physics.BLOCKWIDTH/2
@@ -166,11 +211,34 @@ class Engine():
                     dy = math.sin(angle)
                     rx = x + dx
                     ry = y + dy
+                    #block = self.ClosestIntersectingBlock2(((x, y), (rx, ry)), ignoreBlock=light)
                     block = self.ClosestIntersectingBlock(((x, y), (rx, ry)), Screen.RAYDISTANCE, ignoreBlock=light)
                     if block:
                         distance = self.GetDistance(light.GetPosition(), block.GetPosition())
                         block.render += 100*(Screen.RAYDISTANCE - distance)/Screen.RAYDISTANCE
                         self.renderedBlocks[block.id] = block
+
+    def LineBlockCollision(self, line, block):
+        if self.LinesIntersects(line, (block.hitboxWorldFrame.topleft, block.hitboxWorldFrame.topright)):
+            return True
+        if self.LinesIntersects(line, (block.hitboxWorldFrame.bottomleft, block.hitboxWorldFrame.bottomright)):
+            return True
+        if self.LinesIntersects(line, (block.hitboxWorldFrame.topleft, block.hitboxWorldFrame.bottomleft)):
+            return True
+        if self.LinesIntersects(line, (block.hitboxWorldFrame.bottomright, block.hitboxWorldFrame.topright)):
+            return True
+        return False
+
+    def LinesIntersects(self, s0, s1):
+        dx0 = s0[1][0] - s0[0][0]
+        dx1 = s1[1][0] - s1[0][0]
+        dy0 = s0[1][1] - s0[0][1]
+        dy1 = s1[1][1] - s1[0][1]
+        p0 = dy1*(s1[1][0]-s0[0][0]) - dx1*(s1[1][1]-s0[0][1])
+        p1 = dy1*(s1[1][0]-s0[1][0]) - dx1*(s1[1][1]-s0[1][1])
+        p2 = dy0*(s0[1][0]-s1[0][0]) - dx0*(s0[1][1]-s1[0][1])
+        p3 = dy0*(s0[1][0]-s1[1][0]) - dx0*(s0[1][1]-s1[1][1])
+        return (p0*p1<=0) & (p2*p3<=0)
 
     def GetDistance(self, pos1, pos2):
         x1, y1 = pos1

@@ -71,8 +71,8 @@ class Enviroment():
                 self.SpreadWater(x, y + 1, visited)
 
     def GetBlockType(self, y):
-        if y > 2:
-            return BlockType.WATER
+        #if y > 2:
+        #    return BlockType.WATER
         if y > 0:
             return BlockType.DIRT
         if y > -20:
@@ -108,6 +108,21 @@ class Enviroment():
         for xPos in range(round(xBlock - distanceBlock), round(xBlock + distanceBlock)):
             for yPos in range(round(yBlock - distanceBlock), round(yBlock + distanceBlock)):
                 block = self.BlockAt((xPos, yPos))
+                if block:
+                    blocks.append(block)
+        return blocks
+    
+    def BlocksInArea(self, pos1, pos2):
+        x1, y1 = pos1
+        x2, y2 = pos2
+        xMin = min(x1, x2)
+        xMax = max(x1, x2)
+        yMin = min(y1, y2)
+        yMax = max(y1, y2)
+        blocks = []
+        for x in range(round(xMin / Physics.BLOCKWIDTH), round(xMax / Physics.BLOCKWIDTH)):
+            for y in range(round(yMin / Physics.BLOCKHEIGHT), round(yMax / Physics.BLOCKHEIGHT)):
+                block = self.BlockAt((x, y))
                 if block:
                     blocks.append(block)
         return blocks
