@@ -165,8 +165,28 @@ class Engine():
             y = self.enviroment.GetTopLayerCoordinate(x)
             block = self.enviroment.BlockAt((x, y))
             if block:
-                block.render = 100
-                self.renderedBlocks[block.id] = block
+                if block.color == BlockType.WATER:
+                    yTemp = y
+                    blocks = []
+                    while block:
+                        blocks.append(block)
+                        yTemp -= 1
+                        block = self.enviroment.BlockAt((x, yTemp))
+                    render = 100
+                    for b in reversed(blocks):
+                        b.render = render
+                        render -= 7
+                        self.renderedBlocks[b.id] = b
+                        if render <= 0:
+                            break
+                    if render > 0:
+                        block = self.enviroment.BlockAt((x, y + 1))
+                        if block:
+                            block.render = render - 7
+                            self.renderedBlocks[block.id] = block
+                else:
+                    block.render = 100
+                    self.renderedBlocks[block.id] = block
         self.RaytraceRandom(pos)
         #self.RaytraceEachBlock(pos)
 

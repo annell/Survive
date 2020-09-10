@@ -111,8 +111,7 @@ class App:
         pygame.display.update()
     
     def draw_background(self):
-        #self.world._display_surf.fill((10, 160, 250))
-        self.world._display_surf.fill((2, 2, 2))
+        self.world._display_surf.fill((3, 3, 3))
     
     def draw_entities(self):
         for entity in self.entities:

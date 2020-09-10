@@ -71,8 +71,8 @@ class Enviroment():
                 self.SpreadWater(x, y + 1, visited)
 
     def GetBlockType(self, y):
-        #if y > 2:
-        #    return BlockType.WATER
+        if y > 2:
+            return BlockType.WATER
         if y > 0:
             return BlockType.DIRT
         if y > -20:
