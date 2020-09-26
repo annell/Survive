@@ -11,10 +11,13 @@ from Creature import Player
 from Engine import Engine 
 from Enviroment import Enviroment 
 
+import sys
+
 
 
 class App:
-    def __init__(self):
+    def __init__(self, seed):
+        self.seed = seed
         self._running = True
         self._close = False
         self.size = self.weight, self.height = Screen.WIDTH, Screen.HEIGHT
@@ -23,16 +26,18 @@ class App:
         self.lastTime = time.time()
         self.currFps = 0
         self.clock = pygame.time.Clock()
+        if not self.seed:
+            self.seed = int(random.random()*100000)
+        print("Starting Survive with seed: {}".format(self.seed))
         pygame.mixer.init()
         pygame.init()
         pygame.display.set_caption("Survive")
  
     def on_init(self):
         self.camera = Camera(Screen.WIDTH, Screen.HEIGHT, Physics.BLOCKWIDTH, Physics.BLOCKHEIGHT)
-        self.enviroment = Enviroment(Physics.MAPWIDTH, Physics.MAPDEPTH, int(random.random() * 100000.0))
-        self.world = Engine(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera, self.enviroment)
+        enviroment = Enviroment(Physics.MAPWIDTH, Physics.MAPDEPTH, self.seed)
+        self.world = Engine(pygame.display.set_mode(self.size, pygame.DOUBLEBUF | pygame.HWSURFACE), self.camera, enviroment)
         self.player = Player(0, -35)
-        #self.world.AddLight(self.player)
         self.entities = [self.player]
         self._running = True
         self.visionLines = []
@@ -98,7 +103,7 @@ class App:
         self.player.SelectBlock(self.camera.CameraToWorld(pygame.mouse.get_pos()), self.world)
 
         self.world.renderedBlocks.clear()
-        for block in self.enviroment.BlocksAt(self.player.GetPosition(), 500):
+        for block in self.world.enviroment.BlocksAt(self.player.GetPosition(), 500):
             self.world.renderedBlocks[block.id] = block
         self.world.LightSource(self.player.GetPosition())
 
@@ -120,7 +125,7 @@ class App:
     def draw_hud(self):
         self.draw_playerInteraction()
 
-        self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.enviroment.seed, self.player.onGround), (0,0))
+        self.draw_text("({}, {}) @ World: {} | {}".format(*self.player.GetPosition(), self.seed, self.player.onGround), (0,0))
         self.draw_text("FPS: {}".format(self.currFps), (0, 10))
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
@@ -128,7 +133,7 @@ class App:
         self.draw_text("({}, {})".format(*self.camera.CameraToBlockgrid(pygame.mouse.get_pos())), (0, 70))
         block = self.world.BlockAt(self.camera.CameraToBlockgrid(pygame.mouse.get_pos()))
         if block:
-            self.draw_text("({}, {}) Color: {}".format(*self.camera.CameraToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
+            self.draw_text("({}, {}) Color: {}".format(*self.camera.WorldToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
     
     def draw_playerInteraction(self):
         center = self.camera.WorlToCamera(self.player.GetPositionCentered())
@@ -165,5 +170,8 @@ class App:
         self.on_cleanup()
  
 if __name__ == "__main__" :
-    theApp = App()
+    seed = None
+    if len(sys.argv) > 1:
+        seed = int(sys.argv[1])
+    theApp = App(seed)
     theApp.on_execute()

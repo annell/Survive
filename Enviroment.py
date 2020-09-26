@@ -10,9 +10,8 @@ class Enviroment():
         self.blockindex = 0
         self.blocks = defaultdict(lambda : {})
         self.topLayer = defaultdict(lambda : None)
-        self.seed = seed
-        self.genHills = OpenSimplex(self.seed)
-        self.genCaves = OpenSimplex(self.seed)
+        self.genHills = OpenSimplex(seed)
+        self.genCaves = OpenSimplex(seed)
         self.width = width
         self.height = height
         self.GenerateEnviroment()
@@ -32,7 +31,7 @@ class Enviroment():
                     else:
                         self.CreateBlock((x, y), self.GetBlockType(y))
 
-                    self.topLayer[x] = (self.blocks[x][y], y)
+                    #self.topLayer[x] = (self.blocks[x][y], y)
                     first = False
                 else:
                     if self.topLayer[x][0].color == BlockType.GRASS and abs(y - self.topLayer[x][1]) < 3:
@@ -47,28 +46,34 @@ class Enviroment():
                     cave = 1 * self.Noise(0.02 * x, 0.05 * y, self.genCaves) 
                     if cave < -0.4 and self.blocks[x][y].color != BlockType.WATER:
                         self.blocks[x].pop(y, None)
+        
+        self.StartSpread()
 
         #Spread water
-        #visited = defaultdict(lambda : defaultdict(lambda : False))
-        #for x in range(-self.width, self.width):
-        #    for y in range(self.topLayer[x][1], self.height):
-        #        if y in self.blocks[x]:
-        #            if self.blocks[x][y].color == BlockType.WATER:
-        #                self.SpreadWater(x + 1, y, visited)
-        #                self.SpreadWater(x - 1, y, visited)
-        #                self.SpreadWater(x, y + 1, visited)
-        #        visited[x][y] = True
+    def StartSpread(self):
+        visited = defaultdict(lambda : defaultdict(lambda : False))
+        for x in range(-self.width, self.width):
+            for y in range(self.topLayer[x][1], self.height):
+                if y in self.blocks[x]:
+                    if self.blocks[x][y].color == BlockType.WATER:
+                        try:
+                            self.SpreadWater(x + 1, y, visited)
+                            self.SpreadWater(x - 1, y, visited)
+                            self.SpreadWater(x, y + 1, visited)
+                        except RecursionError:
+                            print("Max recursion hit around: (", x, ",", y, ")")
     
     def SpreadWater(self, x, y, visited):
+        if y in self.blocks[x]:
+            return
         if visited[x][y]:
             return
         visited[x][y] = True
-        if x >= -Physics.MAPWIDTH and x <= Physics.MAPWIDTH and y > -Physics.MAPDEPTH and y < Physics.MAPDEPTH:
-            if y not in self.blocks[x]:
-                self.CreateBlock((x, y), BlockType.WATER)
-                self.SpreadWater(x + 1, y, visited)
-                self.SpreadWater(x - 1, y, visited)
-                self.SpreadWater(x, y + 1, visited)
+        if x > -Physics.MAPWIDTH and x < Physics.MAPWIDTH and y > -Physics.MAPDEPTH and y < Physics.MAPDEPTH:
+            self.CreateBlock((x, y), BlockType.WATER)
+            self.SpreadWater(x + 1, y, visited)
+            self.SpreadWater(x - 1, y, visited)
+            self.SpreadWater(x, y + 1, visited)
 
     def GetBlockType(self, y):
         if y > 2:
@@ -144,6 +149,12 @@ class Enviroment():
         block = Block(self.blockindex, x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
         self.blocks[x][y] = block
         self.blockindex += 1
+        if x in self.topLayer:
+            yTop = self.topLayer[x][1]
+            if yTop > y:
+                self.topLayer[x] = (block, y)
+        else:
+            self.topLayer[x] = (block, y)
         return block
 
     def DeleteBlock(self, block):

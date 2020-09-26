@@ -155,6 +155,11 @@ class Engine():
         self.lightSources.append(block)
 
     def LightSource(self, pos):
+        self.GlobalIllumination(pos)
+        self.RaytraceRandom(pos)
+        #self.RaytraceEachBlock(pos)
+
+    def GlobalIllumination(self, pos):
         camX, camY = self.camera.CameraTopLeftCornerWorldFrame(pos)
         cam2X, cam2Y = self.camera.CameraBottomRightCornerWorldFrame(pos)
         blockPos = self.camera.WorldToBlockgrid((camX, camY))
@@ -168,27 +173,29 @@ class Engine():
                 if block.color == BlockType.WATER:
                     yTemp = y
                     blocks = []
-                    while block:
-                        blocks.append(block)
-                        yTemp -= 1
-                        block = self.enviroment.BlockAt((x, yTemp))
+                    b = block
+                    while b:
+                        if b.color != BlockType.WATER:
+                            break
+                        blocks.append(b)
+                        yTemp += 1
+                        b = self.enviroment.BlockAt((x, yTemp))
                     render = 100
-                    for b in reversed(blocks):
+                    for b in blocks:
                         b.render = render
-                        render -= 7
+                        render -= 5
                         self.renderedBlocks[b.id] = b
                         if render <= 0:
                             break
                     if render > 0:
-                        block = self.enviroment.BlockAt((x, y + 1))
-                        if block:
-                            block.render = render - 7
-                            self.renderedBlocks[block.id] = block
+                        b = self.enviroment.BlockAt((x, yTemp))
+                        if b:
+                            b.render = render - 5
+                            self.renderedBlocks[b.id] = b
                 else:
                     block.render = 100
                     self.renderedBlocks[block.id] = block
-        self.RaytraceRandom(pos)
-        #self.RaytraceEachBlock(pos)
+
 
     def RaytraceEachBlock(self, pos):
         for light in self.lightSources:
