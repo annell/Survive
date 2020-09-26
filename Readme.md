@@ -14,15 +14,14 @@ Features
        I think the best solution would be to use quadtree to do a fast search.
 - Maybe add opacity property to each block, so that I can have such things as glass and leafs.
 - Make spread water function work dynamically.
-- Where spread water function is done, the lighting gets screwed up.
-
-Bugs
 - The reach that I use to select and remove blocks is really buggy, I thinkt he stepsize is to big. The problem might be that stepsize is the wrong approach.
-
-Working on:
 - Fix so that placing blocks will mark the block where you place at, to make it easier for user.
 
+Working on:
+- Add quadtree as another data structure for the world, so that it might get easier to query for specific blocks.
+
 Completed:
+- Where spread water function is done, the lighting gets screwed up.
 - Spread water function is not working atm, make it happen
 - Should only be able to place blocks close to me and adjecent to another block.
 - Add aim line, to help user.

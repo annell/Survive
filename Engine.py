@@ -210,18 +210,19 @@ class Engine():
                         closestDist = 10000000
                         n = 0
                         for block in self.enviroment.BlocksInArea(light.GetPosition(), targetBlock.GetPosition()):
-                            line = (light.GetPosition(), block.GetPosition())
+                            bx, by = block.GetPosition()
+                            bx += Physics.BLOCKWIDTH/2
+                            by += Physics.BLOCKHEIGHT/2
+                            line = ((x, y), (bx, by))
                             distance = self.GetDistance(*line)
                             if distance < closestDist:
                                 if self.LineBlockCollision(line, block):
                                     n +=1
                                     closestBlock = block
                                     closestDist = distance
-                        block = closestBlock
-                        if block:
-                            distance = self.GetDistance(light.GetPosition(), block.GetPosition())
-                            block.render += 100*(Screen.RAYDISTANCE - distance)/Screen.RAYDISTANCE
-                            self.renderedBlocks[block.id] = block
+                        if closestBlock:
+                            closestBlock.render += 100*(Screen.RAYDISTANCE - closestDist)/Screen.RAYDISTANCE
+                            self.renderedBlocks[closestBlock.id] = closestBlock
     
     def RaytraceRandom(self, pos):
         maxRays = 50

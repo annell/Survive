@@ -4,17 +4,53 @@ from collections import defaultdict
 from opensimplex import OpenSimplex
 from Common import Physics
 from Common import BlockType
+from Quadtree import quadtree
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
 class Enviroment():
     def __init__(self, width, height, seed):
         self.blockindex = 0
         self.blocks = defaultdict(lambda : {})
+        self.blockList = []
         self.topLayer = defaultdict(lambda : None)
         self.genHills = OpenSimplex(seed)
         self.genCaves = OpenSimplex(seed)
         self.width = width
         self.height = height
+        self.quadtree = quadtree.QuadTree(quadtree.Rect(0, 0, self.width*2, self.height*2))
         self.GenerateEnviroment()
+        #self.DrawWorld()
+    
+    def DrawWorld(self):
+        DPI = 72
+        fig = plt.figure(figsize=(700/DPI, 500/DPI), dpi=DPI)
+        ax = plt.subplot()
+        ax.set_xlim(-self.width, self.width)
+        ax.set_ylim(-self.height, self.height)
+        self.quadtree.draw(ax)
+
+        ax.scatter([p.x for p in self.blockList], [p.y for p in self.blockList], s=4)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        region = quadtree.Rect(140, 190, 150, 150)
+        found_points = []
+        self.quadtree.query(region, found_points)
+        print('Number of found points =', len(found_points))
+
+        ax.scatter([p.x for p in found_points], [p.y for p in found_points],
+                facecolors='none', edgecolors='r', s=32)
+
+        region.draw(ax, c='r')
+
+        ax.invert_yaxis()
+        plt.tight_layout()
+        #plt.savefig('search-quadtree.png', DPI=72)
+        plt.show()
+
 
     def GenerateEnviroment(self):
         for x in range(-self.width, self.width):
@@ -149,6 +185,9 @@ class Enviroment():
         block = Block(self.blockindex, x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
         self.blocks[x][y] = block
         self.blockindex += 1
+        point = quadtree.Point(x, y, block)
+        self.quadtree.insert(point)
+        self.blockList.append(point)
         if x in self.topLayer:
             yTop = self.topLayer[x][1]
             if yTop > y:
