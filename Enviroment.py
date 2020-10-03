@@ -20,7 +20,7 @@ class Enviroment():
         self.genCaves = OpenSimplex(seed)
         self.width = width
         self.height = height
-        self.quadtree = quadtree.QuadTree(quadtree.Rect(0, 0, self.width*2, self.height*2))
+        self.quadtree = quadtree.QuadTree(quadtree.Rect(0, 0, self.width*2*Physics.BLOCKWIDTH, self.height*2*Physics.BLOCKHEIGHT))
         self.GenerateEnviroment()
         #self.DrawWorld()
     
@@ -28,15 +28,15 @@ class Enviroment():
         DPI = 72
         fig = plt.figure(figsize=(700/DPI, 500/DPI), dpi=DPI)
         ax = plt.subplot()
-        ax.set_xlim(-self.width, self.width)
-        ax.set_ylim(-self.height, self.height)
+        ax.set_xlim(-self.width*Physics.BLOCKWIDTH, self.width*Physics.BLOCKWIDTH)
+        ax.set_ylim(-self.height*Physics.BLOCKHEIGHT, self.height*Physics.BLOCKHEIGHT)
         self.quadtree.draw(ax)
 
         ax.scatter([p.x for p in self.blockList], [p.y for p in self.blockList], s=4)
         ax.set_xticks([])
         ax.set_yticks([])
 
-        region = quadtree.Rect(140, 190, 150, 150)
+        region = quadtree.Rect(10, 10, 15, 15)
         found_points = []
         self.quadtree.query(region, found_points)
         print('Number of found points =', len(found_points))
@@ -185,7 +185,7 @@ class Enviroment():
         block = Block(self.blockindex, x*Physics.BLOCKWIDTH, y*Physics.BLOCKHEIGHT, blockType)
         self.blocks[x][y] = block
         self.blockindex += 1
-        point = quadtree.Point(x, y, block)
+        point = quadtree.Point(*block.GetPosition(), block)
         self.quadtree.insert(point)
         self.blockList.append(point)
         if x in self.topLayer:
@@ -200,6 +200,10 @@ class Enviroment():
         x = (block.hitboxWorldFrame.x) / Physics.BLOCKWIDTH
         y = (block.hitboxWorldFrame.y) / Physics.BLOCKHEIGHT
         self.blocks[x].pop(y, None)
+        points = []
+        self.quadtree.query_radius(block.GetPosition(), 1, points)
+        for point in points:
+            point.payload = None
 
 class Block():
     def __init__(self, id, x, y, BlockType, translucent=False):

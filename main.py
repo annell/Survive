@@ -24,6 +24,7 @@ class App:
         self.fps = Physics.FPS
         self.playtime = 0.0
         self.lastTime = time.time()
+        self.blockQueryTime = time.time()
         self.currFps = 0
         self.clock = pygame.time.Clock()
         if not self.seed:
@@ -130,10 +131,17 @@ class App:
         self.draw_text("Press R to restart", (0, 20))
         self.draw_text("Press ESC to exit", (0, 30))
         self.draw_text("Press p to pause", (0, 40))
-        self.draw_text("({}, {})".format(*self.camera.CameraToBlockgrid(pygame.mouse.get_pos())), (0, 70))
-        block = self.world.BlockAt(self.camera.CameraToBlockgrid(pygame.mouse.get_pos()))
-        if block:
-            self.draw_text("({}, {}) Color: {}".format(*self.camera.WorldToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80))
+        blocks = []
+        currTime = time.time()
+        self.world.enviroment.quadtree.query_radius(self.camera.CameraToWorld(pygame.mouse.get_pos()), Physics.BLOCKWIDTH, blocks)
+        self.draw_text("({}, {}) blocks: {} in :{}s".format(*self.camera.CameraToWorld(pygame.mouse.get_pos()), len(blocks), currTime - self.blockQueryTime), (0, 70))
+        self.blockQueryTime = currTime
+        n = 0
+        for point in blocks:
+            block = point.payload
+            if block:
+                self.draw_text("({}, {}) Color: {}".format(*self.camera.WorldToBlockgrid((block.hitboxWorldFrame.x, block.hitboxWorldFrame.y)), block.color), (0, 80+n*10))
+                n += 1
     
     def draw_playerInteraction(self):
         center = self.camera.WorlToCamera(self.player.GetPositionCentered())

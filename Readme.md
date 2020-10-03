@@ -16,9 +16,10 @@ Features
 - Make spread water function work dynamically.
 - The reach that I use to select and remove blocks is really buggy, I thinkt he stepsize is to big. The problem might be that stepsize is the wrong approach.
 - Fix so that placing blocks will mark the block where you place at, to make it easier for user.
+- Find the contour of the land.
+- Make the quadtree the base function for holding the world, go away from the map, this will probably make it easier to make it proceduaral.
 
 Working on:
-- Add quadtree as another data structure for the world, so that it might get easier to query for specific blocks.
 
 Completed:
 - Where spread water function is done, the lighting gets screwed up.
@@ -30,3 +31,4 @@ Completed:
 - I want to have different types of blocks that i can place
 - I want to build / break with same button, but it should depend on item
 - Activate the water and make the ray casting penetrate water
+- Add quadtree as another data structure for the world, so that it might get easier to query for specific blocks.
